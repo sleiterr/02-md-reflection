@@ -1,0 +1,8 @@
+# Node.js
+node_modules
+
+# Environment filter
+
+.env
+.env.local
+.env.*local
