@@ -11,12 +11,18 @@ app.use(cors());
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => console.log("Connected to MongoDB"))
-  .catch(() => console.error("Error connecting:", err));
+  .catch((err) => console.error("Error connecting:", err));
 
 const productSchema = new mongoose.Schema({
-  name: String,
-  price: Number,
-  description: String,
+  products: [
+    {
+      id: Number,
+      name: String,
+      price: Number,
+      description: String,
+      category: String,
+    },
+  ],
 });
 
 app.get("/", (req, res) => {
@@ -30,12 +36,43 @@ app.get("/products", async (req, res) => {
   res.json(products);
 });
 
+app.post("/products/:id", async (req, res) => {
+  try {
+    const updateDoc = await Product.findByIdAndUpdate(
+      req.params.id,
+      {
+        $push: { products: req.body },
+      },
+      { new: true } // retirn new product
+    );
+    if (!updateDoc) return res.status(404).json({ message: "Not Found" });
+    res.json(updateDoc);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 app.post("/products", async (req, res) => {
   try {
     const newProduct = new Product(req.body);
     await newProduct.save();
     res.json(newProduct);
   } catch {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.patch("/product/:docid/:productId", async (req, res) => {
+  try {
+    const updateDoc = await Product.findOneAndUpdate(
+      { _id: req.params.docid, "products.id": parseInt(req.params.productId) },
+      { $set: { "products.$.category": req.body.category } },
+      { new: true }
+    );
+    if (!updateDoc) return res.status(404).json({ message: "Not Found" });
+
+    res.json(updateDoc);
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
