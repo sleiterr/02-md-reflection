@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(cors());
 
 mongoose
-  .conect(process.env.MONGO_URL)
+  .connect(process.env.MONGO_URL)
   .then(() => console.log("Connected to MongoDB"))
   .catch(() => console.error("Error connecting:", err));
 
@@ -19,20 +19,28 @@ const productSchema = new mongoose.Schema({
   description: String,
 });
 
+app.get("/", (req, res) => {
+  res.send("Hello, server is working!");
+});
+
 const Product = mongoose.model("Product", productSchema);
 
 app.get("/products", async (req, res) => {
-  const products = new Product.find();
+  const products = await Product.find();
   res.json(products);
 });
 
 app.post("/products", async (req, res) => {
-  const newProduct = new Product(req, body);
-  await newProduct.save();
-  res.json(newProduct);
+  try {
+    const newProduct = new Product(req.body);
+    await newProduct.save();
+    res.json(newProduct);
+  } catch {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(3000, () => {
-  console.log("The server is running on mongodb+srv");
+  console.log(`The server is running on http://localhost:${PORT}`);
 });
